@@ -1,0 +1,54 @@
+#! /bin/sh
+
+pgrep -x sxhkd > /dev/null || sxhkd &
+
+if [ -x $HOME/bin/dual_monitor ]; then
+  dual_monitor=$($HOME/bin/dual_monitor)
+  res=$(echo "$dual_monitor" | tail -n 1)
+  echo "res: " "$res"
+  if [ "$res" == "1" ]; then
+    bspc monitor eDP-1 -d I II III IV V
+    bspc monitor HDMI-1 -d VI VII VIII IX X
+  else
+    bspc monitor -d I II III IV V VI VII VIII IX X
+  fi
+
+fi
+
+# Terminate already running bar instances
+killall -q polybar
+
+# Wait until the processes have been shut down
+while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
+
+# Launch bar
+/usr/bin/polybar -c ~/.config/polybar/config.ini main &
+
+
+if [[ -n $res ]]; then
+   /usr/bin/polybar -c ~/.config/polybar/config.ini ext_bar &
+fi
+
+
+# Bar
+## /usr/bin/polybar -c ~/.config/polybar/config.ini &
+# Notifications
+/usr/bin/dunst &
+# Picom
+picom -b &
+# source feh for bg
+source $HOME/.fehbg
+# Low battery notifier
+~/.config/bspwm/scripts/low_bat_notifier.sh
+
+
+
+bspc config border_width         0
+bspc config window_gap           8
+
+bspc config split_ratio          0.52
+bspc config borderless_monocle   true
+bspc config gapless_monocle      true
+
+bspc rule -a mplayer2 state=floating
+bspc rule -a firefox desktop='^2'
